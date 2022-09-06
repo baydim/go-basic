@@ -27,6 +27,7 @@ func main() {
 	router.POST("/upload", uploadSingleFile)
 	router.GET("/delete/:filename", deleteSingleFile)
 	router.GET("/fetch/:id", fetchApi)
+	router.GET("/fetchModel/:id", fetchApiUsingModel)
 	router.Run(":1234")
 }
 
@@ -91,4 +92,56 @@ func fetchApi(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"id":      id,
 		"message": "pong", "body": sb})
+}
+
+func UnmarshalModelTodo(data []byte) (ModelTodo, error) {
+	var r ModelTodo
+	err := json.Unmarshal(data, &r)
+	return r, err
+}
+
+func (r *ModelTodo) Marshal() ([]byte, error) {
+	return json.Marshal(r)
+}
+
+type ModelTodo struct {
+	UserID    int64  `json:"userId"`
+	ID        int64  `json:"id"`
+	Title     string `json:"title"`
+	Completed bool   `json:"completed"`
+}
+
+func fetchApiUsingModel(c *gin.Context) {
+	id := c.Params.ByName("id")
+	resp, err := http.Get("https://jsonplaceholder.typicode.com/todos/" + id)
+	if err != nil {
+		log.Fatalln(err)
+		c.JSON(http.StatusBadRequest, gin.H{"message": "pong", "error": err})
+	}
+	//We Read the response body on the line below.
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+		c.JSON(http.StatusBadRequest, gin.H{"message": "pong", "error": err})
+	}
+	//Convert the body to type string
+	sb := json.RawMessage(body)
+	var model ModelTodo
+	err = json.Unmarshal(sb, &model)
+	if err != nil {
+		log.Fatalln(err)
+		c.JSON(http.StatusBadRequest, gin.H{"message": "pong", "error": err})
+	}
+	if model.Completed {
+		c.JSON(http.StatusOK, gin.H{
+			"complete": true,
+			"id":       id,
+			"message":  "pong", "body": model})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"complete": false,
+			"id":       id,
+			"message":  "pong", "body": model})
+	}
+
 }
