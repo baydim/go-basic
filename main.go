@@ -3,11 +3,13 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
+
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,6 +30,7 @@ func main() {
 	router.GET("/delete/:filename", deleteSingleFile)
 	router.GET("/fetch/:id", fetchApi)
 	router.GET("/fetchModel/:id", fetchApiUsingModel)
+	router.GET("/scrape", scrapingWeb)
 	router.Run(":1234")
 }
 
@@ -143,5 +146,18 @@ func fetchApiUsingModel(c *gin.Context) {
 			"id":       id,
 			"message":  "pong", "body": model})
 	}
+
+}
+
+func scrapingWeb(c *gin.Context) {
+	doc, err := goquery.NewDocument("https://baydim.github.io/yournose/")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	title := doc.Find("title").Text()
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "pong", "title": title})
 
 }
