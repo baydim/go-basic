@@ -1,4 +1,4 @@
-module tes_api
+module go-basic
 
 go 1.19
 
